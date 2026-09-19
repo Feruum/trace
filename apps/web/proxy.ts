@@ -227,6 +227,9 @@ export const config = {
 
 export default async function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl
+  if (pathname === '/logo_trace.png' || pathname === '/logo_with_alphabet.png') {
+    return NextResponse.next()
+  }
   if (pathname === '/api/trace/profile' || pathname === '/api/trace/assistant') {
     return NextResponse.next()
   }
