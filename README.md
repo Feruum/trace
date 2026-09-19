@@ -1,197 +1,300 @@
-<p align="center">
-  <a href="https://learnhouse.app">
-    <img src=".github/images/learnhouse-github.png" alt="LearnHouse" width="600" />
-  </a>
-</p>
+# TRACE
 
-<h3 align="center">The next-gen open-source platform for world-class educational content.</h3>
+TRACE is an evidence-first university discovery workspace built on top of the LearnHouse Core platform.
+
+A prospective student searches for a university and receives a source-linked profile assembled from public data. TRACE keeps uncertainty visible: every accepted image retains its provider page, license, creator, date, category, and confidence signal. Missing or weak evidence is shown as missing or requiring review instead of being replaced with stock media or invented facts.
 
 <p align="center">
-  <a href="https://github.com/learnhouse/learnhouse/blob/main/LICENSE"><img src="https://img.shields.io/github/license/learnhouse/learnhouse?style=flat&color=blue" alt="License" /></a>
-  <a href="https://github.com/learnhouse/learnhouse/stargazers"><img src="https://img.shields.io/github/stars/learnhouse/learnhouse?style=flat" alt="Stars" /></a>
-  <a href="https://www.npmjs.com/package/learnhouse"><img src="https://img.shields.io/npm/v/learnhouse?style=flat&label=cli" alt="CLI Version" /></a>
-  <a href="https://app.codecov.io/gh/learnhouse/learnhouse"><img src="https://img.shields.io/codecov/c/github/learnhouse/learnhouse?flag=api&label=api%20coverage" alt="API Coverage" /></a>
-  <a href="https://github.com/learnhouse/learnhouse/commits"><img src="https://img.shields.io/github/last-commit/learnhouse/learnhouse?style=flat&label=last%20commit" alt="Last Commit" /></a>
-  <a href="https://github.com/learnhouse/learnhouse/issues"><img src="https://img.shields.io/github/issues/learnhouse/learnhouse?style=flat" alt="Issues" /></a>
-  <a href="https://github.com/learnhouse/learnhouse/pulls"><img src="https://img.shields.io/github/issues-pr/learnhouse/learnhouse?style=flat&label=PRs" alt="Pull Requests" /></a>
+  <img src="logo_trace.png" alt="TRACE" width="140" />
 </p>
 
-<p align="center">
-📖 <b>Courses</b> — Create and manage courses with ease<br>
-✏️ <b>Editor</b> — Powerful block-based Notion-like content editor<br>
-📦 <b>Collections</b> — Organize courses into curated bundles<br>
-📝 <b>Assignments</b> — Create tasks and track student submissions<br>
-💬 <b>Discussions</b> — Community forums for your learners<br>
-🎙️ <b>Podcasts</b> — Audio content for on-the-go learning<br>
-📊 <b>Analytics</b> — Track engagement and course performance<br>
-🧊 <b>Playgrounds</b> — AI-generated interactive elements, simulations & diagrams<br>
-💻 <b>Code</b> — Real code execution with auto-grading in 30+ languages<br>
-📋 <b>Boards</b> — Real-time collaborative whiteboards<br>
-🧠 <b>AI</b> — Context-aware AI for learning & teaching<br>
-🎓 <b>Certificates</b> — Auto-generate certificates on course completion<br>
-👥 <b>User Groups</b> — Organize learners and control access<br>
-🔍 <b>SEO</b> — Built-in SEO optimization with metadata, sitemaps & open graph<br>
-🎨 <b>Customization</b> — Custom branding, landing pages & theming<br>
-💳 <b>Payments (Enterprise)</b> — Sell courses with no fees and no lock-in<br>
-🔐 <b>SSO (Enterprise)</b> — Single sign-on with OAuth providers<br>
-🏢 <b>Multi-Org (Enterprise)</b> — Run multiple organizations from a single instance<br>
-</p>
+## Product flow
 
-## 🚀 Get Started
-
-LearnHouse has an official CLI that handles everything — self-hosting, updates, backups, and local development.
-
-### Self-host
-
-```bash
-npx learnhouse@latest setup
+```text
+Search → resolve identity → inspect evidence → filter categories
+      → save up to two profiles → compare evidence coverage → ask the grounded assistant
 ```
 
-The setup wizard walks you through domain, database, admin account, and optional features. Once done, it generates all config files and starts your instance.
+TRACE does not rank universities. A comparison describes the coverage and state of available evidence; it never declares a winner.
 
-```bash
-npx learnhouse start       # Start services
-npx learnhouse stop        # Stop services
-npx learnhouse update      # Update to latest version
-npx learnhouse logs        # Stream logs
-npx learnhouse backup      # Backup database
-npx learnhouse doctor      # Diagnose issues
+## Application surfaces
+
+| URL | Surface | Description |
+| --- | --- | --- |
+| `/` | TRACE marketing landing | Project presentation and entry points. |
+| `/workspace` | TRACE Core workspace | Public university search and evidence workflow inside the LearnHouse Core shell. |
+| `/home` | LearnHouse Core organization picker | Standard authenticated organization selection. |
+| `/dash` | LearnHouse Core dashboard | Core administration and content-management surface. |
+| `/orgs/[orgslug]/...` | Internal Core routes | Organization-scoped pages resolved by the tenancy proxy. |
+
+`/workspace` is the public entry point for the Core TRACE experience. In single-tenancy mode it is rewritten to the default organization internally; the browser does not need to know the organization slug.
+
+The former standalone visual routes were intentionally removed and now return 404:
+
+- `/trace`
+- `/locus`
+- `/methodology`
+- `/compare`
+- `/privacy`
+- `/terms`
+- `/universities/[id]`
+
+The server endpoints remain available under `/api/locus/*` and `/api/trace/*` for the Core frontend and operational tooling. Legal text is available through the server endpoints `/api/trace/legal/privacy` and `/api/trace/legal/terms`.
+
+## Core integration
+
+TRACE reuses LearnHouse Core rather than maintaining a second application shell.
+
+The public workspace keeps the existing Core:
+
+- organization context and tenancy resolution;
+- `SessionGate`, `OrgProvider`, `OrgMenu`, footer, watermark, and MFA gates;
+- Core typography, semantic color tokens, spacing, borders, cards, buttons, inputs, dialogs, and responsive behavior;
+- existing authentication, organization settings, dashboard, courses, library, communities, boards, podcasts, playgrounds, and editor routes.
+
+TRACE-specific behavior is mounted in the Core public organization content slot:
+
+- `apps/web/app/orgs/[orgslug]/(withmenu)/home-client.tsx`
+- `apps/web/components/CoreTrace/CoreTraceWorkspace.tsx`
+
+The workspace uses the supplied branding files without recreating or substituting them:
+
+- `apps/web/public/logo_trace.png` — standalone TRACE mark and Core menu fallback;
+- `apps/web/public/logo_with_alphabet.png` — TRACE wordmark in the workspace.
+
+The original source assets are also kept at the repository root as `logo_trace.png` and `trace_logo_with_aplhaphets.png`.
+
+## TRACE capabilities
+
+### University profiles
+
+The profile pipeline:
+
+1. resolves a university through Wikidata;
+2. asks the user to choose when identity resolution is ambiguous;
+3. collects category evidence from Wikimedia Commons and Openverse;
+4. applies provenance and confidence gates;
+5. removes exact and perceptual duplicates;
+6. preserves provider attribution and source links;
+7. exposes honest loading, empty, partial, unavailable, and error states.
+
+Core categories include campus, dormitory, classroom, library, and city. Additional evidence categories include sport, laboratory, and student life.
+
+### Applicant context
+
+The optional applicant panel stores only browser-session context such as target country, city, field, intake, budget, degree, and exam scores. These values personalize retrieval but never become official university requirements.
+
+### Shortlist and comparison
+
+The shortlist is limited to two profiles and stored in `sessionStorage`. It is not persisted in the database. Comparison metrics include category coverage, confirmed/review materials, source count, rejected provenance candidates, duplicates, and admissions-source availability.
+
+### Grounded RAG assistant
+
+The Core profile mounts the assistant below evidence and source audit content. The browser sends the current opaque `profileToken` to:
+
+```text
+POST /api/trace/assistant
 ```
 
-### Development
+The server:
+
+- builds bounded evidence chunks from the current profile;
+- retrieves only relevant evidence kinds for the question;
+- treats provider text as untrusted data;
+- calls the configured Wikivibe-compatible provider server-side;
+- validates every returned citation and quote against server-owned chunks;
+- returns `answered` with claims and citations, or `insufficient_evidence` with the server explanation and refusal reason.
+
+`WIKIVIBE_API_KEY` is never exposed to browser code. When a provider key is absent, the service can return deterministic evidence-only fallback for retrieved material; it never fabricates unsupported claims.
+
+## Architecture
+
+```text
+apps/web/app/orgs/[orgslug]/(withmenu)/home-client.tsx
+        │
+        ▼
+apps/web/components/CoreTrace/CoreTraceWorkspace.tsx
+        │
+        ├── Core UI primitives and organization shell
+        ├── ProfileHeader / CategoryGallery / PhotoCard
+        ├── SourceAudit / ApplicantOnboarding / SourceAssistant
+        ├── POST /api/trace/profile
+        └── POST /api/trace/assistant
+                │
+                ▼
+apps/web/lib/locus/**
+        ├── profile pipeline and provider adapters
+        ├── confidence, provenance, deduplication, and evidence chunks
+        ├── profile cache and transient store
+        └── grounded RAG retrieval and response validation
+```
+
+### Important implementation paths
+
+| Path | Responsibility |
+| --- | --- |
+| `apps/web/components/CoreTrace/CoreTraceWorkspace.tsx` | Core TRACE state, search, candidate resolution, shortlist, comparison, and composition. |
+| `apps/web/lib/locus/types.ts` | Profile, evidence, applicant, and API contracts. |
+| `apps/web/lib/locus/pipeline.ts` | Wikidata, Wikimedia Commons, Openverse, admissions, scoring, and profile assembly. |
+| `apps/web/lib/locus/evidence.ts` | Bounded evidence chunks used by RAG. |
+| `apps/web/lib/locus/confidence.ts` | Deterministic confidence and reason-code scoring. |
+| `apps/web/lib/locus/dedupe.ts` | URL, exact-byte, and perceptual duplicate detection. |
+| `apps/web/lib/locus/rag/` | Retrieval, prompt construction, provider adapter, strict parsing, and citation validation. |
+| `apps/web/app/api/locus/` | Canonical server handlers. |
+| `apps/web/app/api/trace/` | Public same-origin wrappers with security headers and observability. |
+| `apps/web/proxy.ts` | Tenancy resolution, `/workspace` alias, Core rewrites, and public asset passthrough. |
+
+## Local development
+
+### Prerequisites
+
+- Bun `1.4.2`;
+- Docker Desktop;
+- Python `3.14.7` for the current API lockfile, or the repository's Docker/CLI environment;
+- PostgreSQL and Redis for the LearnHouse Core backend.
+
+### Recommended development startup
+
+From the repository root:
 
 ```bash
-git clone https://github.com/learnhouse/learnhouse.git
-cd learnhouse
 npx learnhouse dev
 ```
 
-This spins up PostgreSQL and Redis, installs dependencies, and starts the API, Web, and Collab servers with hot reload.
+The LearnHouse CLI starts the API, web, collaboration server, PostgreSQL, and Redis development stack.
 
-> See the full [CLI documentation](apps/cli/README.md) for all commands and options.
+If the database services need to be started separately:
 
-## TRACE — source-verified university profiles
+```bash
+docker compose -f .learnhouse/docker-compose.dev.yml up -d db redis
+```
 
-This fork includes **TRACE**, a public, anonymous product surface at [`/`](http://localhost:3010/) and [`/trace`](http://localhost:3010/trace). The legacy `/locus` path redirects to the TRACE workspace for compatibility with the LOCUS Startup Hackathon Case 01 submission flow.
+The web application is in `apps/web`:
 
-### What TRACE solves
+```bash
+cd apps/web
+bun install
+bun run dev
+```
 
-Prospective students need a fast way to see what the open web can actually prove about a university. TRACE accepts a university name, resolves ambiguous Wikidata entities explicitly, gathers campus/dormitory/classroom/library/city and student-life media from Wikimedia Commons and Openverse, rejects weak metadata, removes exact and perceptual duplicates, and keeps provider landing URLs, licenses, creators, dates, categories, and evidence indexes visible.
+Open:
 
-### Product flow and extra features
+```text
+http://localhost:3010/
+http://localhost:3010/workspace
+```
 
-`Search → Resolve → Inspect → Filter → Ask → Shortlist → Compare`
+The Core workspace requires the API to be reachable through the configured backend URL. If the API is unavailable, LearnHouse correctly renders its Core offline/server error state; TRACE source retrieval cannot complete without the backend process and external providers.
 
-- Compare up to two profiles using evidence coverage, confirmed/review material counts, source count, rejection count, duplicate count, and per-category coverage. TRACE never ranks universities or invents a winner.
-- Shortlist is session-only in browser storage. No profile or user data is persisted.
-- The grounded Evidence Assistant uses a server-only Wikivibe OpenAI-compatible chat call. It retrieves bounded evidence chunks from the current profile, treats chunks as untrusted data, validates every exact quote against the server-owned source chunk, and returns explicit `insufficient_evidence` instead of guessing.
+### Environment
 
-### Technical architecture
+Create `apps/web/.env.local` locally. Never commit this file or provider keys.
 
-- `apps/web/app/api/trace/profile` and `apps/web/app/api/trace/assistant`: public same-origin Node route handlers; no auth, cookies, database writes, or API key exposure.
-- `apps/web/lib/locus/sources`: Wikidata identity resolver, Wikimedia Commons adapter, Openverse adapter.
-- `apps/web/lib/locus/confidence.ts`: deterministic Unicode-aware evidence score; `>=70` high, `55–69` review, below `55` rejected.
-- `apps/web/lib/locus/dedupe.ts`: normalized URL dedupe, SHA-256 exact-byte hash, 16×16 grayscale average hash with Hamming threshold `<=12`, `sharp`, 8 MiB download cap, 5-second hash timeout, and source/area/confidence tie-breaks.
-- `apps/web/lib/locus/evidence.ts` + `apps/web/lib/locus/rag`: bounded source chunks, lexical retrieval, strict JSON response parsing, exact citation validation, and provider timeout/error mapping.
-- `WIKIVIBE_API_KEY` is read only on the server. Set optional `WIKIVIBE_MODEL` to override the default `gpt-5.6-luna`. Never commit a key.
+```env
+NEXT_PUBLIC_LEARNHOUSE_BACKEND_URL=http://localhost:1338/
+WIKIVIBE_API_KEY=your-server-only-key
+WIKIVIBE_MODEL=gpt-5.6-luna
+```
 
-### Case mapping and scoring
+`WIKIVIBE_MODEL` is optional. The default model is `gpt-5.6-luna`.
 
-| Judge criterion | TRACE evidence |
-| --- | --- |
-| Accuracy / relevance (30%) | Identity resolution, category evidence, license gate, confidence thresholds, exact/perceptual dedupe, source audit, honest empty states |
-| Technical architecture (25%) | Provider adapters, injected fetch seams, parallel `Promise.allSettled`, 24-second pipeline budget, Node `sharp`, stateless route, grounded RAG contract |
-| UX (20%) | TRACE first viewport, explicit Search/Resolve/Inspect stages, core/filter categories, source cards, keyboard focus, loading/error/empty states, compare tray |
-| Speed (15%) | Parallel providers, bounded result counts, elapsed timer, `profile.durationMs`, no retries within a run |
-| Scalability (10%) | Normalized provider contracts, category registry, source adapters, reusable evidence chunks, optional OpenAI-compatible provider |
+## Verification
 
-### What is automatic / what is not
-
-Automatic: source retrieval, normalization, evidence scoring, category assignment, exact/perceptual dedupe, bounded lexical retrieval, grounded response validation, source attribution, and duplicate/rejection counters. Not automatic: semantic scene recognition, university quality ranking, enrollment/ranking/cost/climate facts, manual image curation, stock fallback, hardcoded demo payloads, fabricated dates, or fabricated confidence. Empty/partial categories and assistant refusals are valid outcomes.
-
-### Providers, licensing, and legal notice
-
-Production sources are Wikidata, Wikimedia Commons, and Openverse. Every displayed media card links to the provider landing page and keeps provider-supplied license/creator/date metadata; remote media is not bundled. Software remains based on LearnHouse AGPL-3.0; `LICENSE` is unchanged. TRACE exposes a source-code link and AGPL/no-warranty notice in the public UI. The product has no persistence layer and uses no paid API key except the optional server-side Wikivibe key for grounded answers.
-
-### Verification commands
+Focused TRACE and Core checks:
 
 ```bash
 cd apps/web
 bun test tests/locus
 bun x tsc --noEmit --pretty false
+```
+
+Available project checks:
+
+```bash
 bun run lint:strict
 bun run build
 ```
 
-Browser acceptance: open `/` anonymously at desktop and phone widths; run an ambiguous university, a known university, `zzzz university 9f3c`, filter categories, save two profiles, compare them, ask a source-grounded question, inspect citations, and confirm an unsupported cost/climate question produces insufficient evidence. `npx learnhouse dev` also starts the upstream DB/Redis stack, but on the development workstation Redis port `6379` may already be occupied by another container; TRACE itself is independently smoke-tested with the web server.
+The focused suite covers provider contracts, profile assembly, provenance gates, deduplication, RAG retrieval and citation validation, route contracts, Core integration, migration of removed visual routes, applicant context, comparison, and API hardening.
 
-## 🛠️ Tech Stack
+### Browser acceptance checklist
 
-<p align="center">
-<a href="https://nextjs.org"><img src="https://img.shields.io/badge/Next.js-000?style=flat&logo=nextdotjs&logoColor=white" alt="Next.js" /></a>
-<a href="https://react.dev"><img src="https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black" alt="React" /></a>
-<a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white" alt="TypeScript" /></a>
-<a href="https://tailwindcss.com"><img src="https://img.shields.io/badge/TailwindCSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white" alt="TailwindCSS" /></a>
-<a href="https://www.radix-ui.com"><img src="https://img.shields.io/badge/Radix_UI-161618?style=flat&logo=radixui&logoColor=white" alt="Radix UI" /></a>
-<a href="https://tiptap.dev"><img src="https://img.shields.io/badge/Tiptap-1a1a2e?style=flat&logoColor=white" alt="Tiptap" /></a>
-<a href="https://codemirror.net"><img src="https://img.shields.io/badge/CodeMirror-D30707?style=flat&logo=codemirror&logoColor=white" alt="CodeMirror" /></a>
-<a href="https://yjs.dev"><img src="https://img.shields.io/badge/Yjs-6EEB83?style=flat&logoColor=black" alt="Yjs" /></a>
-<a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
-<a href="https://www.python.org"><img src="https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white" alt="Python" /></a>
-<a href="https://www.postgresql.org"><img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL" /></a>
-<a href="https://redis.io"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis" /></a>
-<a href="https://www.docker.com"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker" /></a>
-<a href="https://stripe.com"><img src="https://img.shields.io/badge/Stripe-635BFF?style=flat&logo=stripe&logoColor=white" alt="Stripe" /></a>
-<a href="https://ai.google.dev"><img src="https://img.shields.io/badge/Gemini-8E75B2?style=flat&logo=googlegemini&logoColor=white" alt="Gemini" /></a>
-<a href="https://www.llamaindex.ai"><img src="https://img.shields.io/badge/LlamaIndex-000?style=flat&logoColor=white" alt="LlamaIndex" /></a>
-<a href="https://aws.amazon.com/s3"><img src="https://img.shields.io/badge/AWS_S3-569A31?style=flat&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyTDIgN3YxMGwxMCA1IDEwLTVWN0wxMiAyem0wIDIuMThMMTkuMTggNyAxMiA5LjgyIDQuODIgNyAxMiA0LjE4ek00IDguNjRsNyAzLjVWMTkuNWwtNy0zLjVWOC42NHptMTAgMTAuODZWMTIuMTRsNy0zLjV2Ny4zNmwtNyAzLjV6Ii8+PC9zdmc+&logoColor=white" alt="AWS S3" /></a>
-<a href="https://www.tinybird.co"><img src="https://img.shields.io/badge/Tinybird-1A1A1A?style=flat&logoColor=white" alt="Tinybird" /></a>
-</p>
+Run with the backend and external provider access available:
 
-## 📁 Project Structure
+1. Open `/` anonymously at desktop width and confirm the TRACE marketing landing loads.
+2. Open `/workspace` at desktop and phone widths and confirm the LearnHouse Core shell remains active.
+3. Confirm the TRACE wordmark and standalone mark load from the repository assets.
+4. Submit an ambiguous university and choose a Wikidata candidate.
+5. Submit a known university and inspect the profile summary, categories, source cards, licenses, creators, dates, and confidence details.
+6. Exercise empty categories, provider errors, retry, and reset states.
+7. Add two profiles to the session shortlist and open evidence-only comparison.
+8. Refresh the workspace and confirm shortlist/applicant session state behavior.
+9. Ask a source-grounded assistant question and inspect claims and citations.
+10. Ask an unsupported cost, climate, or ranking question and confirm `insufficient_evidence`.
+11. Verify `/trace`, `/locus`, `/methodology`, `/compare`, `/privacy`, `/terms`, and `/universities/[id]` return 404.
+12. Inspect browser console and network requests; confirm no API key is present in client payloads.
 
-| App | Path | Description | Technology | Used by |
-|-----|------|-------------|------------|---------|
-| **Web** | `apps/web` | Frontend application — dashboard, course player, editor, landing pages | Next.js, React, TailwindCSS, Tiptap | Teachers, Students, Admins |
-| **API** | `apps/api` | Backend REST API — auth, courses, payments, AI, analytics | FastAPI, Python, SQLModel, Alembic | Web, CLI, Collab |
-| **Collab** | `apps/collab` | Real-time collaboration server — live editing sync for courses & boards | Hocuspocus, Yjs, WebSocket | Web (editor, boards) |
-| **CLI** | `apps/cli` | Official CLI — setup wizard, dev environment, instance management | Commander, Node.js | Developers, Self-hosters |
+## Data, privacy, and evidence boundaries
 
-## 💬 Community
+TRACE is public and stateless from the product perspective:
 
-- [Discord](https://discord.gg/CMyZjjYZ6x) — chat with the team and other users
-- [Documentation](https://docs.learnhouse.app) — guides and references
+- profile generation is request-driven;
+- shortlist and applicant context are browser-session state;
+- transient server caches may hold profile data for the active workflow;
+- no university ranking or quality judgment is inferred;
+- enrollment, tuition, climate, transport, safety, student reviews, and program eligibility are not invented from image metadata;
+- every visible media item keeps a provider landing page and attribution metadata;
+- remote provider media is not bundled into the repository.
 
-## 🤝 Contributing
+See `PRODUCT.md` for the product contract and boundaries.
+
+## LearnHouse Core platform
+
+TRACE retains the underlying LearnHouse platform capabilities, including:
+
+- courses and block-based editing;
+- assignments and learner submissions;
+- libraries and collections;
+- communities and discussions;
+- podcasts;
+- analytics;
+- playgrounds and code activities;
+- collaborative boards;
+- AI learning tools;
+- certificates and user groups;
+- organization customization, authentication, SEO, and administration.
+
+The platform structure remains:
+
+| App | Path | Role |
+| --- | --- | --- |
+| Web | `apps/web` | Next.js Core frontend and TRACE workspace. |
+| API | `apps/api` | FastAPI authentication, organizations, content, analytics, and services. |
+| Collab | `apps/collab` | Hocuspocus/Yjs real-time collaboration. |
+| CLI | `apps/cli` | Local development and self-hosting commands. |
+
+## Sources and licensing
+
+TRACE uses:
+
+- [Wikidata](https://www.wikidata.org/);
+- [Wikimedia Commons](https://commons.wikimedia.org/);
+- [Openverse](https://openverse.org/).
+
+Provider licenses and attribution remain attached to each displayed item. Follow the terms of the linked provider before reusing media.
+
+The underlying LearnHouse code remains licensed under [AGPL-3.0](LICENSE). This repository contains no committed API keys or provider credentials.
+
+## Contributing
+
+Before opening a change:
 
 ```bash
-git clone https://github.com/learnhouse/learnhouse.git
-cd learnhouse
-npx learnhouse dev
+cd apps/web
+bun test tests/locus
+bun x tsc --noEmit --pretty false
 ```
 
-- [Contributing Guide](CONTRIBUTING.md)
-- [Submit a bug](https://github.com/learnhouse/learnhouse/issues/new?assignees=&labels=bug%2Ctriage&projects=&template=bug.yml&title=%5BBug%5D%3A+)
-- [Good first issues](https://github.com/learnhouse/learnhouse/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
+Keep TRACE logic in `apps/web/lib/locus` and Core presentation in existing Core/shared components. Do not introduce a second application shell for TRACE. Preserve source attribution, evidence boundaries, privacy behavior, and explicit refusal states.
 
-## 🔒 Security
-
-We take the security of LearnHouse and the data entrusted to us seriously. If you discover a vulnerability, please email **security@learnhouse.app** — do not disclose it publicly until we've had a chance to investigate.
-
-Please include a clear description, steps to reproduce, affected endpoints, and any relevant screenshots or proof-of-concept code. We will acknowledge your report, keep you informed, and credit you once resolved if you wish.
-
-See our full [Security Policy](https://learnhouse.app/security) for details on our practices, scope, and responsible disclosure guidelines.
-
-## ✍️ Author & Maintainer
-
-Sweave (Badr B.) — [@swve](https://github.com/swve)
-
-## 💜 A Word
-
-LearnHouse is made with 💜, from the UI to the features it is carefully designed to make students and teachers lives easier and make education software more enjoyable.
-
-Thank you and have fun using/developing/testing LearnHouse !
-
-## 📄 License
-
-[AGPL-3.0](LICENSE) — Enterprise features are available under a separate Enterprise License.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for repository contribution guidance.
