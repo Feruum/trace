@@ -13,7 +13,7 @@ for _stream in (sys.stdout, sys.stderr):
         except Exception:
             pass
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -61,7 +61,27 @@ async def _install_async(short: bool) -> None:
 
     # Schema DDL runs on a sync engine (SQLModel.metadata.create_all is sync).
     sync_engine = create_engine(_to_sync_url(sql_url), echo=False, pool_pre_ping=True)
-    SQLModel.metadata.create_all(sync_engine)
+    with sync_engine.begin() as conn:
+        vector_available = True
+        try:
+            # Vector search is optional. Keep a failed extension install from
+            # aborting the transaction and blocking the rest of the schema.
+            with conn.begin_nested():
+                conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        except Exception:
+            vector_available = False
+
+        tables = SQLModel.metadata.sorted_tables
+        if not vector_available:
+            tables = [
+                table
+                for table in tables
+                if not any(
+                    type(column.type).__name__.lower() == "vector"
+                    for column in table.columns
+                )
+            ]
+        SQLModel.metadata.create_all(conn, tables=tables)
     sync_engine.dispose()
 
     # The install_* coroutines use sqlmodel.ext.asyncio.session.AsyncSession.

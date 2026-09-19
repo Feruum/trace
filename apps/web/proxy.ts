@@ -218,7 +218,7 @@ export const config = {
      * 7. /embed (activity embeds)
      * 8. /ingest (PostHog reverse proxy — must reach the next.config rewrite untouched)
      */
-    '/((?!api|_next|fonts|umami|ingest|examples|embed|monitoring|trace-landing|[\w-]+\.\w+).*)',
+    '/((?!api|_next|fonts|umami|ingest|examples|embed|monitoring|trace-landing|[\\w-]+\\.\\w+).*)',
     '/robots.txt',
     '/payments/stripe/connect/oauth',
     '/podcast/:path*/feed',

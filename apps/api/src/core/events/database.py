@@ -383,19 +383,42 @@ def _is_transient_connect_error(exc: BaseException) -> bool:
 
 async def _bootstrap_schema():
     async with engine.begin() as conn:
+        vector_available = True
         # Enable pgvector extension for vector similarity search (optional — RAG feature)
         try:
             from sqlalchemy import text
-            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            # PostgreSQL marks the current transaction as failed when an
+            # extension is not installed. Isolate this optional DDL in a
+            # savepoint so the table bootstrap below can still run.
+            async with conn.begin_nested():
+                await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         except Exception as e:
             logging.warning(
                 "pgvector extension not available — RAG features will be disabled. "
                 "Install pgvector on your PostgreSQL server to enable course chatbot. "
                 "Error: %s", e
             )
+            vector_available = False
         # Create all tables
         if not is_testing:
-            await conn.run_sync(SQLModel.metadata.create_all)
+            tables = SQLModel.metadata.sorted_tables
+            if not vector_available:
+                # Tables with pgvector columns cannot be created without the
+                # extension. They back the optional RAG feature; keep the rest
+                # of the application usable on PostgreSQL servers without it.
+                tables = [
+                    table
+                    for table in tables
+                    if not any(
+                        type(column.type).__name__.lower() == "vector"
+                        for column in table.columns
+                    )
+                ]
+            await conn.run_sync(
+                lambda sync_conn: SQLModel.metadata.create_all(
+                    sync_conn, tables=tables
+                )
+            )
 
 
 async def connect_to_db(app: FastAPI):
